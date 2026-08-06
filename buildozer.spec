@@ -19,7 +19,7 @@ p4a.local_recipes = %(source.dir)s/recipes
 # 源码
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf
-source.include_patterns = config.py, save.py, game.py, main.py
+source.include_patterns = config.py, save.py, game.py, main.py, data/simhei.ttf
 source.exclude_patterns = build, .git
 
 # 版本
@@ -27,7 +27,8 @@ version = 1.0.0
 version.code = 1
 
 # 入口
-orientation = landscape
+# UI 为竖屏设计(480x800),桌面版即竖屏,故用 portrait(横屏会布局错乱)
+orientation = portrait
 fullscreen = 1
 
 # Android 配置
@@ -35,7 +36,8 @@ android.permissions = INTERNET
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
-android.archs = arm64-v8a, armeabi-v7a
+# x86_64 供本机模拟器调试;arm64-v8a 供真机(平板)
+android.archs = arm64-v8a, x86_64
 
 # Python 依赖(kivy 2.3.1 为本机验证过的稳定版;
 # hostpython3/python3 固定 3.11:p4a 默认的 3.14 会导致 pip 与 p4a 代码不兼容而构建崩溃)

@@ -9,7 +9,7 @@ import os
 import time
 
 import config as C
-from config import SAVE_FILE, INITIAL_ITEMS, INITIAL_TECH
+from config import get_save_file, INITIAL_ITEMS, INITIAL_TECH
 
 CATS = ["female", "male"]
 
@@ -200,6 +200,7 @@ def load():
     data["pets"] = list(DEFAULTS["pets"])
     data["equipped"] = {}
     try:
+        SAVE_FILE = get_save_file()
         if os.path.exists(SAVE_FILE):
             with open(SAVE_FILE, "r", encoding="utf-8") as f:
                 loaded = json.load(f)
@@ -217,6 +218,7 @@ def load():
 def save(data):
     try:
         data["saved_at"] = time.time()
+        SAVE_FILE = get_save_file()
         tmp = SAVE_FILE + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)

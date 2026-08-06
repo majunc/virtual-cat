@@ -176,7 +176,25 @@ FARE_ADULT = 1.0           # 成年猫全价
 FEED_SAT = 35
 
 # ---------------- 存档 ----------------
-SAVE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cat_save.json")
+def get_save_file():
+    """Android 上使用应用私有目录(可写);桌面用脚本所在目录。
+    惰性求值:每次读写时调用,确保 App 已创建、user_data_dir 可用。"""
+    import sys as _sys
+    try:
+        if getattr(_sys, "android_runtime", False) or os.environ.get("ANDROID_ARGUMENT"):
+            from kivy.app import App
+            app = App.get_running_app()
+            if app is not None:
+                d = app.user_data_dir
+                os.makedirs(d, exist_ok=True)
+                return os.path.join(d, "cat_save.json")
+    except Exception:
+        pass
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "cat_save.json")
+
+
+# 兼容旧引用(模块加载时求值,Android 上为兜底值;实际读写用 get_save_file())
+SAVE_FILE = get_save_file()
 SAVE_INTERVAL = 2.0
 
 # ---------------- 服饰目录 ----------------

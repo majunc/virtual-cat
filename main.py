@@ -8,6 +8,18 @@ import sys
 
 os.environ.setdefault("KIVY_NO_ARGS", "1")
 
+# Android 上 Kivy 默认字体(Roboto)不含中文字符,所有中文会显示为方块。
+# 打包 simhei.ttf 并设为全局默认字体(桌面无此文件时自动回退系统字体)。
+_FONT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "simhei.ttf")
+if os.path.exists(_FONT_PATH):
+    from kivy.core.text import LabelBase
+    from kivy.config import Config
+    LabelBase.register(name="Roboto", fn_regular=_FONT_PATH)  # 覆盖默认字体
+    try:
+        LabelBase.register(name="RobotoMono", fn_regular=_FONT_PATH)  # 顺带覆盖等宽
+    except Exception:
+        pass
+
 import config as C
 from game import Game, MAX_MICE, draw_cat, draw_kitten, draw_mouse, kid_label, sex_name
 
