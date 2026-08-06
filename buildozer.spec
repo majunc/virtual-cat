@@ -5,6 +5,10 @@ title = 虚拟小猫
 package.name = virtualcat
 package.domain = org.example
 
+# python-for-android 固定到修复版(build: avoid pip self-upgrade corrupting the build venv, 2026-07-30)
+# 默认版存在 pip 升级损坏 venv 的 bug,导致 ImportError: BuildDependencyInstallError / open_rich_spinner
+p4a.commit = d2ee8c54d9d42375a95f18159e950a119671cf63
+
 # 源码
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf

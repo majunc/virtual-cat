@@ -35,9 +35,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
+          # 严格精确匹配(spec 变了就全新构建,避免旧 p4a/损坏产物混入)
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer
 
       - name: Build APK (debug)
         run: |
