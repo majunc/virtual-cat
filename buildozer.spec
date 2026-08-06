@@ -26,8 +26,9 @@ android.minapi = 21
 android.ndk = 25b
 android.archs = arm64-v8a, armeabi-v7a
 
-# Python 依赖(2.3.1 为本机验证过的稳定版)
-requirements = python3,kivy==2.3.1
+# Python 依赖(kivy 2.3.1 为本机验证过的稳定版;
+# hostpython3/python3 固定 3.11:p4a 默认的 3.14 会导致 pip 与 p4a 代码不兼容而构建崩溃)
+requirements = hostpython3==3.11.6,python3==3.11.6,kivy==2.3.1
 
 # 图标与启动图
 icon.filename = %(source.dir)s/data/icon.png
