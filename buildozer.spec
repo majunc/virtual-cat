@@ -5,10 +5,12 @@ title = 虚拟小猫
 package.name = virtualcat
 package.domain = org.example
 
-# python-for-android 用 master 分支(2026-07-30 已修复 pip 升级损坏 venv 的 bug:
-# "build: avoid pip self-upgrade corrupting the build venv";
-# buildozer 默认分支不含该修复,不能指定 p4a.commit=shallow 仓库里没有的 commit)
-p4a.branch = master
+# python-for-android 用 develop 分支:
+# master 分支的 run_pymodules_install 仍会执行 `pip install -U pip`,
+# 把 venv 内 pip 升级到最新版导致自身损坏(ImportError: open_rich_spinner),
+# 第五次构建(buildozer.spec 改 master 后)即因此失败;
+# develop 分支已移除该 pip 自升级逻辑(2026-08-06 查证 build.py)
+p4a.branch = develop
 
 # 源码
 source.dir = .
