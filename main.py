@@ -686,6 +686,9 @@ class MainApp(App):
         Window.clearcolor = hx("#fff6ec")
         # ===== 桌面版风格:竖向布局(顶部信息 + 画布 + 底部按钮)=====
         root = BoxLayout(orientation="vertical", padding=dp(4), spacing=dp(3))
+        # 关键:让 root 撑满整个窗口(否则 root 默认 size 是 100x100)
+        root.size_hint = (1, 1)
+        root.size = (Window.width, Window.height)
         # ---- 顶部信息条(标题 + 资源)----
         top = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(30), spacing=dp(8))
         self.title_l = Label(text="", size_hint_x=None, width=dp(280), font_size=sp(13),
@@ -821,19 +824,36 @@ class MainApp(App):
 
     # ---------------- Popup 工具 ----------------
     def _pop(self, title, build):
-        body = BoxLayout(orientation="vertical", spacing=dp(4))
-        p = Popup(title=title, content=body, size_hint=(0.9, 0.85))
-        sv = ScrollView()
-        inner = GridLayout(cols=1, size_hint_y=None, spacing=dp(4), padding=dp(8))
-        inner.bind(minimum_height=inner.setter("height"))
-        sv.add_widget(inner)
-        body.add_widget(sv)
-        close_b = Button(text="关闭", **BTN)
-        close_b.bind(on_release=lambda w: p.dismiss())
-        body.add_widget(close_b)
-        build(inner)
-        p.open()
-        return p, inner
+        try:
+            body = BoxLayout(orientation="vertical", spacing=dp(4))
+            p = Popup(title=title, content=body, size_hint=(0.9, 0.85))
+            sv = ScrollView()
+            inner = GridLayout(cols=1, size_hint_y=None, spacing=dp(4), padding=dp(8))
+            inner.bind(minimum_height=inner.setter("height"))
+            sv.add_widget(inner)
+            body.add_widget(sv)
+            close_b = Button(text="关闭", **BTN)
+            close_b.bind(on_release=lambda w: p.dismiss())
+            body.add_widget(close_b)
+            build(inner)
+            p.open()
+            return p, inner
+        except Exception as ex:
+            # 弹窗构造失败时降级:显示错误信息,避免主程序崩溃
+            try:
+                import traceback
+                traceback.print_exc()
+            except Exception:
+                pass
+            try:
+                p2 = Popup(title=title + " (错误)",
+                           content=Label(text="弹窗出错:\n%s" % str(ex)[:200],
+                                         font_size=sp(12)),
+                           size_hint=(0.8, 0.6))
+                p2.open()
+                return p2, None
+            except Exception:
+                return None, None
 
     def _row(self, inner, text, btn_text=None, fn=None, can=True, tip=""):
         row = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
@@ -849,8 +869,10 @@ class MainApp(App):
             row.add_widget(b)
         inner.add_widget(row)
         if tip:
-            inner.add_widget(Label(text=tip, font_size=sp(9), color=hx("#a08a72"),
-                                   size_hint_y=None, height=dp(18)))
+            _tl = Label(text=tip, font_size=sp(9), color=hx("#a08a72"))
+            _tl.size_hint_y = None
+            _tl.height = dp(18)
+            inner.add_widget(_tl)
 
     # ---------------- 喂食 ----------------
     def open_feed(self, *_):
