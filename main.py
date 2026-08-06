@@ -68,27 +68,41 @@ def line(c, pts, color, width=2):
 
 
 def draw_mouse(c, m, H):
-    """老鼠:带轮廓线+耳朵+眼睛+胡须+尾巴(移植桌面版绘制)"""
+    """老鼠:加缩放因子,大屏更易看清(同时保持 hit 准确)"""
     e = hx("#d9c9b8") if not m.gold else hx("#f0c75e")
     ec = hx("#c4b09a") if not m.gold else hx("#c9a23d")
-    # 身体+头
-    ell(c, m.x, m.y, 16, 10, e, H=H, outline=ec, ow=1.5)
-    ell(c, m.x + 16, m.y - 2, 8, 7, e, H=H, outline=ec, ow=1.5)
-    # 耳朵(圆形)
-    ell(c, m.x - 10, m.y - 6, 4, 5, e, H=H, outline=ec, ow=1.2)
-    ell(c, m.x + 2, m.y - 8, 4, 5, e, H=H, outline=ec, ow=1.2)
-    ell(c, m.x - 10, m.y - 6, 2, 3, hx("#f4a8c0"), H=H)
-    ell(c, m.x + 2, m.y - 8, 2, 3, hx("#f4a8c0"), H=H)
-    # 眼睛
-    ell(c, m.x - 6, m.y - 2, 1.8, 2.2, hx(C.DARK), H=H)
-    ell(c, m.x + 5, m.y - 2, 1.8, 2.2, hx(C.DARK), H=H)
-    # 鼻子
-    ell(c, m.x + 11, m.y - 1, 2.5, 2, hx("#e8837a"), H=H)
-    # 胡须
-    line(c, [m.x + 8, m.y - 5, m.x + 16, m.y - 7], ec, 1)
-    line(c, [m.x + 8, m.y + 1, m.x + 16, m.y + 2], ec, 1)
-    # 尾巴(弯曲)
-    line(c, [m.x - 16, m.y - 1, m.x - 24, m.y + 6, m.x - 22, m.y + 13], ec, 2)
+    # 缩放因子:大屏老鼠按密度自适应,小屏保持原尺寸
+    ms = getattr(m, "_draw_scale", 1.0)
+    # 身体+头(放大 ~1.8 倍,大屏更易看清)
+    body_w, body_h = int(16 * ms * 1.6), int(10 * ms * 1.5)
+    head_w, head_h = int(8 * ms * 1.6), int(7 * ms * 1.5)
+    ell(c, m.x, m.y, body_w, body_h, e, H=H, outline=ec, ow=2)
+    ell(c, m.x + body_w * 0.7, m.y - int(2 * ms), head_w, head_h, e, H=H, outline=ec, ow=2)
+    # 耳朵(放大)
+    er = int(4 * ms * 1.4)
+    ell(c, m.x - int(8 * ms), m.y - int(6 * ms), er, er + 1, e, H=H, outline=ec, ow=1.5)
+    ell(c, m.x + int(2 * ms), m.y - int(8 * ms), er, er + 1, e, H=H, outline=ec, ow=1.5)
+    # 内耳
+    ell(c, m.x - int(8 * ms), m.y - int(6 * ms), max(1, int(2 * ms * 1.3)), max(2, int(3 * ms)),
+        hx("#f4a8c0"), H=H)
+    ell(c, m.x + int(2 * ms), m.y - int(8 * ms), max(1, int(2 * ms * 1.3)), max(2, int(3 * ms)),
+        hx("#f4a8c0"), H=H)
+    # 眼睛(放大)
+    eye_r = max(1.8, int(2.4 * ms * 1.6))
+    ell(c, m.x - int(5 * ms), m.y - int(2 * ms), eye_r, eye_r + 0.5, hx(C.DARK), H=H)
+    ell(c, m.x + int(6 * ms), m.y - int(2 * ms), eye_r, eye_r + 0.5, hx(C.DARK), H=H)
+    # 鼻子(放大)
+    ell(c, m.x + int(10 * ms * 1.4), m.y - int(1 * ms), max(2, int(3 * ms)), max(2, int(2.5 * ms)),
+        hx("#e8837a"), H=H)
+    # 胡须(略放大)
+    line(c, [m.x + int(7 * ms), (H or 0) - (m.y - int(5 * ms)),
+             m.x + int(15 * ms), (H or 0) - (m.y - int(7 * ms))], ec, max(1, int(ms)))
+    line(c, [m.x + int(7 * ms), (H or 0) - (m.y + int(1 * ms)),
+             m.x + int(15 * ms), (H or 0) - (m.y + int(2 * ms))], ec, max(1, int(ms)))
+    # 尾巴(弯曲,放大)
+    line(c, [m.x - body_w * 0.7, m.y - int(1 * ms),
+             m.x - body_w * 1.0, m.y + int(5 * ms),
+             m.x - body_w * 0.85, m.y + int(12 * ms)], ec, max(1, int(2 * ms)))
 
 
 def draw_tail(c, cx, cy, s, H=None):
@@ -720,6 +734,7 @@ class MainApp(App):
         root.add_widget(minis_grid)
         # ---- 中间:画布(占剩余空间)----
         self.canvas = CatCanvas(self.game)
+        self.canvas.size_hint = (1, 1)
         root.add_widget(self.canvas)
         # ---- 底部:按钮(3 行,桌面版风格)----
         btn_rows = [
@@ -807,15 +822,16 @@ class MainApp(App):
     # ---------------- Popup 工具 ----------------
     def _pop(self, title, build):
         body = BoxLayout(orientation="vertical", spacing=dp(4))
+        p = Popup(title=title, content=body, size_hint=(0.9, 0.85))
         sv = ScrollView()
         inner = GridLayout(cols=1, size_hint_y=None, spacing=dp(4), padding=dp(8))
         inner.bind(minimum_height=inner.setter("height"))
         sv.add_widget(inner)
         body.add_widget(sv)
-        body.add_widget(Button(text="关闭", **BTN), )
-        body.children[0].bind(on_release=lambda w: p.dismiss())
+        close_b = Button(text="关闭", **BTN)
+        close_b.bind(on_release=lambda w: p.dismiss())
+        body.add_widget(close_b)
         build(inner)
-        p = Popup(title=title, content=body, size_hint=(0.9, 0.85))
         p.open()
         return p, inner
 
