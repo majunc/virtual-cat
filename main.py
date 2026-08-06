@@ -514,6 +514,8 @@ class CatCanvas(Widget):
         super().__init__(**kw)
         self.game = game
         self._need_redraw = True
+        self._marks = []  # 必初始化,防止 _update 访问时缺失崩溃
+        self._marks_l = None
     def on_touch_move(self, touch):
         if self.collide_point(*touch.pos):
             self.game.tx = touch.x
@@ -532,104 +534,114 @@ class CatCanvas(Widget):
         g = self.game
         W, H = self.width, self.height
         if W < 50:
+            self._marks = []
             return
         C.CW, C.CH = W, H
         C.GROUND_Y = H - 60
         c = self.canvas
-        c.clear()
-        s = C.CAT_SCALE
-        # ===== 完整场景绘制(移植桌面版 draw_scene)=====
-        ground = H - 60
-        # 墙面
-        c.add(Color(*hx(C.WALL)))
-        c.add(Rectangle(pos=(0, 0), size=(W, ground)))
-        # 地板(带木纹线)
-        c.add(Color(*hx(C.FLOOR)))
-        c.add(Rectangle(pos=(0, ground - 8), size=(W, 8 + 60)))
-        for i in range(0, int(W), 90):
-            c.add(Color(*hx(C.FLOOR_LINE)))
-            c.add(Line(points=[i, ground - 8, i, ground + 52], width=1))
-        # 踢脚线
-        c.add(Color(*hx("#d9c3a3")))
-        c.add(Rectangle(pos=(0, ground - 10), size=(W, 10)))
-        # 窗户(左上)
-        wx, wy = W * 0.05, H * 0.06
-        c.add(Color(*hx(C.WINDOW)))
-        c.add(Rectangle(pos=(wx, wy), size=(min(130, W * 0.2), 100)))
-        c.add(Color(*hx("#b8a07a")))
-        c.add(Line(points=[wx + 65, wy, wx + 65, wy + 100], width=2))
-        c.add(Line(points=[wx, wy + 50, wx + 130, wy + 50], width=2))
-        # 门(右侧)
-        dx, dy = W * 0.98 - 110, ground - 130
-        c.add(Color(*hx("#c9a06a")))
-        c.add(Rectangle(pos=(dx, dy), size=(90, ground - dy)))
-        c.add(Color(*hx("#9a7a4a")))
-        c.add(Line(points=[dx, dy, dx, ground, dx + 90, ground, dx + 90, dy], width=2))
-        c.add(Color(*hx("#f0c75e")))
-        c.add(Ellipse(pos=(dx + 68, dy + 55), size=(8, 8)))
-        # 挂画
-        px, py = W * 0.70, H * 0.10
-        c.add(Color(*hx("#efe3cf")))
-        c.add(Rectangle(pos=(px, py), size=(70, 50)))
-        c.add(Color(*hx("#b8a07a")))
-        c.add(Line(points=[px, py, px + 70, py, px + 70, py + 50, px, py + 50, px, py], width=2))
-        c.add(Color(*hx("#e8837a")))
-        c.add(Line(points=[px + 10, py + 38, px + 32, py + 18], width=3))
-        c.add(Color(*hx("#7bc47f")))
-        c.add(Line(points=[px + 32, py + 18, px + 58, py + 36], width=3))
-        # 家具/科技/装饰(动态,按已购集合)
-        for fid in (list(getattr(g, "furniture", [])) + list(getattr(g, "tech", [])) + list(C.SCENE_DECOR)):
-            _draw_item_kv(c, W, H, fid)
-        # 鱼缸小鱼(数量)
-        fx, fy = W * 0.945, H * 0.70
-        for i in range(min(getattr(g, "fish", 0), 10)):
-            c.add(Color(*hx("#e8837a")))
-            c.add(Ellipse(pos=(fx - 22 + (i % 5) * 10, fy - 8 + (i // 5) * 14), size=(6, 4)))
-        # 小鸟(鸟笼)
-        if getattr(g, "birds", 0) > 0:
-            bx, by = W * 0.11, H * 0.44
+        try:
+            c.clear()
+            s = C.CAT_SCALE
+            # ===== 完整场景绘制(移植桌面版 draw_scene)=====
+            ground = H - 60
+            # 墙面
+            c.add(Color(*hx(C.WALL)))
+            c.add(Rectangle(pos=(0, 0), size=(W, ground)))
+            # 地板(带木纹线)
+            c.add(Color(*hx(C.FLOOR)))
+            c.add(Rectangle(pos=(0, ground - 8), size=(W, 8 + 60)))
+            for i in range(0, int(W), 90):
+                c.add(Color(*hx(C.FLOOR_LINE)))
+                c.add(Line(points=[i, ground - 8, i, ground + 52], width=1))
+            # 踢脚线
+            c.add(Color(*hx("#d9c3a3")))
+            c.add(Rectangle(pos=(0, ground - 10), size=(W, 10)))
+            # 窗户(左上)
+            wx, wy = W * 0.05, H * 0.06
+            c.add(Color(*hx(C.WINDOW)))
+            c.add(Rectangle(pos=(wx, wy), size=(min(130, W * 0.2), 100)))
+            c.add(Color(*hx("#b8a07a")))
+            c.add(Line(points=[wx + 65, wy, wx + 65, wy + 100], width=2))
+            c.add(Line(points=[wx, wy + 50, wx + 130, wy + 50], width=2))
+            # 门(右侧)
+            dx, dy = W * 0.98 - 110, ground - 130
+            c.add(Color(*hx("#c9a06a")))
+            c.add(Rectangle(pos=(dx, dy), size=(90, ground - dy)))
+            c.add(Color(*hx("#9a7a4a")))
+            c.add(Line(points=[dx, dy, dx, ground, dx + 90, ground, dx + 90, dy], width=2))
             c.add(Color(*hx("#f0c75e")))
-            c.add(Ellipse(pos=(bx - 8, by - 6), size=(10, 12)))
-            c.add(Ellipse(pos=(bx - 6, by - 9), size=(5, 5)))
+            c.add(Ellipse(pos=(dx + 68, dy + 55), size=(8, 8)))
+            # 挂画
+            px, py = W * 0.70, H * 0.10
+            c.add(Color(*hx("#efe3cf")))
+            c.add(Rectangle(pos=(px, py), size=(70, 50)))
+            c.add(Color(*hx("#b8a07a")))
+            c.add(Line(points=[px, py, px + 70, py, px + 70, py + 50, px, py + 50, px, py], width=2))
             c.add(Color(*hx("#e8837a")))
-            c.add(Line(points=[bx - 5, by - 7, bx - 1, by - 5, bx - 5, by - 4], width=1))
-        # 母猫
-        draw_cat(c, g.cat_x, g.cat_y, s, "female", preg=g.pregnancy, H=H,
-                 equipped=g.equipped.get("female", {}) if hasattr(g, "equipped") else None)
-        # 公猫
-        draw_cat(c, g.male_x, g.male_y, s, "male", H=H,
-                 equipped=g.equipped.get("male", {}) if hasattr(g, "equipped") else None)
-        # 小猫站位
-        sw = g._swaddled()
-        others = [k for k in g.kittens if k["stage"] != "swaddle"]
-        for i, k in enumerate(sw):
-            dx = W * (0.2 + 0.3 * (i % 3))
-            draw_kitten(c, dx, C.GROUND_Y - 70, C.KITTEN_SCALE, k, H=H)
-        for i, k in enumerate(others):
-            dx = W * 0.15 + (i % 6) * 100
-            if k["stage"] == "adult":
-                k["_x"], k["_y"] = dx, C.GROUND_Y - 110
-            draw_kitten(c, dx, C.GROUND_Y - 110, C.KITTEN_SCALE * 1.2, k, H=H)
-        # 老鼠
-        for m in g.mice:
-            draw_mouse(c, m, H)
-        # 标记(💍🤰😷)用文字层
-        self._marks = []
-        marks = []
-        if g.pregnancy > C.PREG_EMOJI_SHOW:
-            marks.append((g.cat_x + 40, g.cat_y - 80, "🤰"))
-        for k in g.kittens:
-            mm = ""
-            if k["married_to"] is not None:
-                mm += "💍"
-            if k["sex"] == C.SEX_F and k["preg"] > C.PREG_EMOJI_SHOW:
-                mm += "🤰"
-            if mm:
-                marks.append((k.get("_x", 0) or k.get("_y", 0), k.get("_y", 0), mm))
-        if g.sick:
-            marks.append((g.cat_x + 35, g.cat_y - 70, "😷"))
-            marks.append((g.male_x + 35, g.male_y - 70, "😷"))
-        self._marks = marks
+            c.add(Line(points=[px + 10, py + 38, px + 32, py + 18], width=3))
+            c.add(Color(*hx("#7bc47f")))
+            c.add(Line(points=[px + 32, py + 18, px + 58, py + 36], width=3))
+            # 家具/科技/装饰(动态,按已购集合)
+            for fid in (list(getattr(g, "furniture", [])) + list(getattr(g, "tech", [])) + list(C.SCENE_DECOR)):
+                _draw_item_kv(c, W, H, fid)
+            # 鱼缸小鱼(数量)
+            fx, fy = W * 0.945, H * 0.70
+            for i in range(min(getattr(g, "fish", 0), 10)):
+                c.add(Color(*hx("#e8837a")))
+                c.add(Ellipse(pos=(fx - 22 + (i % 5) * 10, fy - 8 + (i // 5) * 14), size=(6, 4)))
+            # 小鸟(鸟笼)
+            if getattr(g, "birds", 0) > 0:
+                bx, by = W * 0.11, H * 0.44
+                c.add(Color(*hx("#f0c75e")))
+                c.add(Ellipse(pos=(bx - 8, by - 6), size=(10, 12)))
+                c.add(Ellipse(pos=(bx - 6, by - 9), size=(5, 5)))
+                c.add(Color(*hx("#e8837a")))
+                c.add(Line(points=[bx - 5, by - 7, bx - 1, by - 5, bx - 5, by - 4], width=1))
+            # 母猫
+            draw_cat(c, g.cat_x, g.cat_y, s, "female", preg=g.pregnancy, H=H,
+                     equipped=g.equipped.get("female", {}) if hasattr(g, "equipped") else None)
+            # 公猫
+            draw_cat(c, g.male_x, g.male_y, s, "male", H=H,
+                     equipped=g.equipped.get("male", {}) if hasattr(g, "equipped") else None)
+            # 小猫站位
+            sw = g._swaddled()
+            others = [k for k in g.kittens if k["stage"] != "swaddle"]
+            for i, k in enumerate(sw):
+                dx = W * (0.2 + 0.3 * (i % 3))
+                draw_kitten(c, dx, C.GROUND_Y - 70, C.KITTEN_SCALE, k, H=H)
+            for i, k in enumerate(others):
+                dx = W * 0.15 + (i % 6) * 100
+                if k["stage"] == "adult":
+                    k["_x"], k["_y"] = dx, C.GROUND_Y - 110
+                draw_kitten(c, dx, C.GROUND_Y - 110, C.KITTEN_SCALE * 1.2, k, H=H)
+            # 老鼠
+            for m in g.mice:
+                draw_mouse(c, m, H)
+            # 标记(💍🤰😷)用文字层
+            self._marks = []
+            marks = []
+            if g.pregnancy > C.PREG_EMOJI_SHOW:
+                marks.append((g.cat_x + 40, g.cat_y - 80, "🤰"))
+            for k in g.kittens:
+                mm = ""
+                if k["married_to"] is not None:
+                    mm += "💍"
+                if k["sex"] == C.SEX_F and k["preg"] > C.PREG_EMOJI_SHOW:
+                    mm += "🤰"
+                if mm:
+                    marks.append((k.get("_x", 0) or k.get("_y", 0), k.get("_y", 0), mm))
+            if g.sick:
+                marks.append((g.cat_x + 35, g.cat_y - 70, "😷"))
+                marks.append((g.male_x + 35, g.male_y - 70, "😷"))
+            self._marks = marks
+        except Exception:
+            # 绘制任何异常都不能导致崩溃,记录并保证 _marks 存在
+            self._marks = []
+            try:
+                import traceback
+                traceback.print_exc()
+            except Exception:
+                pass
 
     def on_touch_up(self, touch):
         return super().on_touch_up(touch)
@@ -752,7 +764,7 @@ class MainApp(App):
         self.canvas.draw()
         if getattr(self, "_marks_l", None):
             self.canvas.canvas.remove(self._marks_l)
-        if self.canvas._marks:
+        if getattr(self.canvas, "_marks", None):
             c = self.canvas.canvas
             for (mx, my, txt) in self.canvas._marks:
                 pass
