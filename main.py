@@ -792,7 +792,7 @@ class MainApp(App):
         inner = GridLayout(cols=1, size_hint_y=None, spacing=dp(4), padding=dp(8))
         inner.bind(minimum_height=inner.setter("height"))
         sv.add_widget(inner)
-        body.add_widget(sv, weight=1)
+        body.add_widget(sv)
         body.add_widget(Button(text="关闭", **BTN), )
         body.children[0].bind(on_release=lambda w: p.dismiss())
         build(inner)
@@ -804,7 +804,7 @@ class MainApp(App):
         row = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
         lb = Label(text=text, font_size=sp(11), color=hx("#5a4632"), halign="left", valign="middle")
         lb.bind(size=lb.setter("text_size"))
-        row.add_widget(lb, weight=1)
+        row.add_widget(lb)
         if btn_text:
             b = Button(text=btn_text, **(BTN if can else DIS))
             if can:
