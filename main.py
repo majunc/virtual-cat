@@ -261,22 +261,29 @@ class MainApp(App):
     def build(self):
         self.game = Game(self)
         Window.clearcolor = hx("#fff6ec")
-        root = BoxLayout(orientation="vertical", padding=dp(6), spacing=dp(4))
+        # 横屏布局:左侧画布 + 右侧控制面板(平板横屏为主)
+        root = BoxLayout(orientation="horizontal", padding=dp(6), spacing=dp(6))
+        # ---- 左侧画布(占大部分宽度) ----
+        self.canvas = CatCanvas(self.game)
+        root.add_widget(self.canvas)
+        # ---- 右侧控制面板(固定较窄宽度,内容超高时可滚动) ----
+        panel = BoxLayout(orientation="vertical", size_hint_x=None, width=dp(330),
+                          spacing=dp(4))
         # 顶部信息
         self.title_l = Label(text="", size_hint_y=None, height=dp(28),
                              font_size=sp(15), bold=True, color=hx("#5a4632"),
                              halign="left", valign="middle")
         self.title_l.bind(size=self.title_l.setter("text_size"))
-        root.add_widget(self.title_l)
+        panel.add_widget(self.title_l)
         self.res_l = Label(text="", size_hint_y=None, height=dp(20),
                            font_size=sp(11), color=hx("#a08a72"), halign="left", valign="middle")
         self.res_l.bind(size=self.res_l.setter("text_size"))
-        root.add_widget(self.res_l)
+        panel.add_widget(self.res_l)
         self.state_l = Label(text="", size_hint_y=None, height=dp(20),
                              font_size=sp(12), bold=True, color=hx("#e889a9"),
                              halign="center", valign="middle")
         self.state_l.bind(size=self.state_l.setter("text_size"))
-        root.add_widget(self.state_l)
+        panel.add_widget(self.state_l)
         # 状态条
         self.bars = {}
         for key, label, col in (("hunger", "🍖 饱腹", "#97c459"), ("happiness", "💗 快乐", "#f0c75e"),
@@ -287,7 +294,7 @@ class MainApp(App):
             pb = ProgressBar(max=100, value=80)
             row.add_widget(pb)
             self.bars[key] = pb
-            root.add_widget(row)
+            panel.add_widget(row)
         # 三小条
         self.minis = {}
         for key, label, col in (("grow", "🍼成长", "#f4a8c0"), ("study", "🎓学业", "#85b7eb"),
@@ -298,27 +305,33 @@ class MainApp(App):
             pb = ProgressBar(max=100, value=0)
             row.add_widget(pb)
             self.minis[key] = pb
-            root.add_widget(row)
-        # 画布
-        self.canvas = CatCanvas(self.game)
-        root.add_widget(self.canvas)
-        # 按钮
+            panel.add_widget(row)
+        # 按钮区(右侧窄面板,竖排更紧凑,超高可滚动)
         btn_rows = [
-            [("🍚 喂食", self.open_feed), ("🤚 抚摸", self.do_pet), ("🧶 玩耍", self.do_play),
-             ("😴 睡觉", self.do_sleep), ("🤱 产奶", self.do_milk)],
-            [("🛍 服饰", self.open_shop), ("👗 衣柜", self.open_wardrobe), ("🛒 市场", self.open_market),
-             ("🛋 家具", self.open_furniture), ("📱 科技", self.open_tech), ("🐾 宠物", self.open_petshop)],
-            [("🏦 银行", self.open_bank), ("🏥 医院", self.open_hospital), ("✏️ 文具", self.open_stationery),
-             ("💍 结婚", self.open_marriage), ("🏫 学校", self.open_school), ("🚏 公交", self.open_busstop),
-             ("🐟 鱼缸", self.open_fish), ("🐦 小鸟", self.open_bird), ("⏻ 全屏", self.toggle_fs)],
+            [("🍚 喂食", self.open_feed), ("🤚 抚摸", self.do_pet)],
+            [("🧶 玩耍", self.do_play), ("😴 睡觉", self.do_sleep)],
+            [("🤱 产奶", self.do_milk), ("🛍 服饰", self.open_shop)],
+            [("👗 衣柜", self.open_wardrobe), ("🛒 市场", self.open_market)],
+            [("🛋 家具", self.open_furniture), ("📱 科技", self.open_tech)],
+            [("🐾 宠物", self.open_petshop), ("🏦 银行", self.open_bank)],
+            [("🏥 医院", self.open_hospital), ("✏️ 文具", self.open_stationery)],
+            [("💍 结婚", self.open_marriage), ("🏫 学校", self.open_school)],
+            [("🚏 公交", self.open_busstop), ("🐟 鱼缸", self.open_fish)],
+            [("🐦 小鸟", self.open_bird), ("⏻ 全屏", self.toggle_fs)],
         ]
-        grid = GridLayout(cols=5, size_hint_y=None, spacing=dp(3))
+        sv = ScrollView(size_hint_y=None, height=dp(10))  # 高度稍后由 grid 撑开
+        sv.do_scroll_x = False
+        grid = GridLayout(cols=2, size_hint_y=None, width=panel.width - dp(12),
+                          spacing=dp(4), padding=dp(2))
         grid.bind(minimum_height=grid.setter("height"))
         for row in btn_rows:
             for text, fn in row:
-                grid.add_widget(Button(text=text, **BTN))
-                grid.children[0].bind(on_release=lambda w, f=fn: f())
-        root.add_widget(grid)
+                b = Button(text=text, **BTN)
+                b.bind(on_release=lambda w, f=fn: f())
+                grid.add_widget(b)
+        sv.add_widget(grid)
+        panel.add_widget(sv)
+        root.add_widget(panel)
         Clock.schedule_interval(self._update, 1.0 / 30.0)
         return root
 

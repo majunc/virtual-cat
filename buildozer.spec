@@ -27,8 +27,8 @@ version = 1.0.0
 version.code = 1
 
 # 入口
-# UI 为竖屏设计(480x800),桌面版即竖屏,故用 portrait(横屏会布局错乱)
-orientation = portrait
+# 用户选择"横屏为主":平板横屏支架使用,UI 已改为左画布+右面板布局
+orientation = landscape
 fullscreen = 1
 
 # Android 配置
