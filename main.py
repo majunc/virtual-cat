@@ -286,10 +286,10 @@ class MainApp(App):
         panel.add_widget(self.state_l)
         # 状态条
         self.bars = {}
-        for key, label, col in (("hunger", "🍖 饱腹", "#97c459"), ("happiness", "💗 快乐", "#f0c75e"),
-                                ("energy", "⚡ 体力", "#85b7eb"), ("health", "❤️ 健康", "#e27979")):
-            row = BoxLayout(size_hint_y=None, height=dp(16), spacing=dp(6))
-            row.add_widget(Label(text=label, size_hint_x=None, width=dp(80), font_size=sp(10),
+        for key, label, col in (("hunger", "🍖饱腹", "#97c459"), ("happiness", "💗快乐", "#f0c75e"),
+                                ("energy", "⚡体力", "#85b7eb"), ("health", "❤️健康", "#e27979")):
+            row = BoxLayout(size_hint_y=None, height=dp(15), spacing=dp(4))
+            row.add_widget(Label(text=label, size_hint_x=None, width=dp(62), font_size=sp(9),
                                  color=hx("#5a4632")))
             pb = ProgressBar(max=100, value=80)
             row.add_widget(pb)
@@ -299,8 +299,8 @@ class MainApp(App):
         self.minis = {}
         for key, label, col in (("grow", "🍼成长", "#f4a8c0"), ("study", "🎓学业", "#85b7eb"),
                                 ("preg", "🤰孕周", "#e889a9")):
-            row = BoxLayout(size_hint_y=None, height=dp(12), spacing=dp(6))
-            row.add_widget(Label(text=label, size_hint_x=None, width=dp(64), font_size=sp(9),
+            row = BoxLayout(size_hint_y=None, height=dp(11), spacing=dp(4))
+            row.add_widget(Label(text=label, size_hint_x=None, width=dp(52), font_size=sp(8),
                                  color=hx("#a08a72")))
             pb = ProgressBar(max=100, value=0)
             row.add_widget(pb)
@@ -319,7 +319,7 @@ class MainApp(App):
             [("🚏 公交", self.open_busstop), ("🐟 鱼缸", self.open_fish)],
             [("🐦 小鸟", self.open_bird), ("⏻ 全屏", self.toggle_fs)],
         ]
-        sv = ScrollView(size_hint_y=None, height=dp(10))  # 高度稍后由 grid 撑开
+        sv = ScrollView(size_hint_y=1.0)  # 撑满面板剩余高度,超高可滚动
         sv.do_scroll_x = False
         grid = GridLayout(cols=2, size_hint_y=None, width=panel.width - dp(12),
                           spacing=dp(4), padding=dp(2))
