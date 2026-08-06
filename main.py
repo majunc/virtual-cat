@@ -104,7 +104,7 @@ def draw_tail(c, cx, cy, s, H=None):
     c.add(Line(points=pts, width=13 * s))
 
 
-def draw_cat(c, cx, cy, s, gender, preg=0.0, H=None):
+def draw_cat(c, cx, cy, s, gender, preg=0.0, H=None, equipped=None):
     """猫:完整移植桌面版(轮廓线+内耳+腮红+胡须+蝴蝶结+尾巴)"""
     fur = hx(C.CAT_MALE) if gender == "male" else hx(C.CAT_WHITE)
     fur_d = hx(C.CAT_WHITE_D)
@@ -134,11 +134,18 @@ def draw_cat(c, cx, cy, s, gender, preg=0.0, H=None):
              cx + 13 * s, (H or 0) - (cy - 62 * s)], fur)
     poly(c, [cx + 53 * s, (H or 0) - (cy - 40 * s), cx + 65 * s, (H or 0) - (cy - 88 * s),
              cx + 25 * s, (H or 0) - (cy - 62 * s)], hx(C.INNER))
-    # 眼睛(带高光)
+    # 眼睛(带高光,眨眼动画)
+    import time as _tm
+    _t_now = _tm.time()
+    _blink = (_t_now % 3.5) < 0.18  # 每 3.5 秒眨眼 0.18 秒
     for dx in (-1, 1):
         ex = cx + dx * 23 * s
-        ell(c, ex, cy + 2 * s, 9 * s, 9 * s, hx(C.DARK), H=H)
-        ell(c, ex - 3 * s, cy - 1 * s, 2.5 * s, 2.5 * s, hx("#ffffff"), H=H)
+        if _blink:
+            # 眨眼:闭眼(一条弧线)
+            line(c, [ex - 9 * s, (H or 0) - (cy + 2 * s), ex + 9 * s, (H or 0) - (cy + 2 * s)], hx(C.DARK), 2.5)
+        else:
+            ell(c, ex, cy + 2 * s, 9 * s, 9 * s, hx(C.DARK), H=H)
+            ell(c, ex - 3 * s, cy - 1 * s, 2.5 * s, 2.5 * s, hx("#ffffff"), H=H)
     # 鼻子
     poly(c, [cx - 6 * s, (H or 0) - (cy + 22 * s), cx + 6 * s, (H or 0) - (cy + 22 * s),
              cx, (H or 0) - (cy + 31 * s)], hx(C.NOSE))
@@ -167,6 +174,95 @@ def draw_cat(c, cx, cy, s, gender, preg=0.0, H=None):
         ell(c, bx - 7 * s, by - 7 * s, 7 * s, 7 * s, hx("#e889a9"), H=H)
         line(c, [bx, by + 6 * s, bx - 3 * s, by + 18 * s], hx(C.BOW_PINK), 2)
         line(c, [bx + 2 * s, by + 6 * s, bx + 5 * s, by + 17 * s], hx(C.BOW_BLUE), 2)
+    # ===== 服装穿搭渲染(移植桌面版 redraw_cloth 核心)=====
+    if equipped:
+        _redraw_cloth_kv(c, cx, cy, s, equipped, gender, H)
+
+
+def _redraw_cloth_kv(c, cx, cy, s, equipped, gender, H):
+    """按 equipped {category: id} 绘制服装(通用形状,带至臻金色皮肤)。"""
+    top_id = equipped.get("top")
+    bottom_id = equipped.get("bottom")
+    hat_id = equipped.get("hat")
+    acc_id = equipped.get("acc")
+    premium = any(t in C.PREMIUM_IDS for t in (top_id, bottom_id, hat_id, acc_id))
+    # 至臻皮肤:身体+头 金色描边/光晕
+    if premium:
+        ell(c, cx, cy + 108 * s, 72 * s, 50 * s, hx("#fff3d6"), H=H, outline=hx("#f0c75e"), ow=2.5)
+        ell(c, cx, cy, 68 * s, 68 * s, hx("#fff3d6"), H=H, outline=hx("#f0c75e"), ow=2.5)
+    # 上衣(top)
+    if top_id:
+        if top_id == "dress_pink":
+            ell(c, cx, cy + 98 * s, 44 * s, 30 * s, hx("#f4a8c0"), H=H, outline=hx("#e08aa6"), ow=1.5)
+            poly(c, [cx - 38 * s, (H or 0) - (cy + 132 * s), cx - 28 * s, (H or 0) - (cy + 104 * s),
+                     cx + 28 * s, (H or 0) - (cy + 104 * s), cx + 38 * s, (H or 0) - (cy + 132 * s)], hx("#ef8fb2"))
+        elif top_id == "dress_white":
+            ell(c, cx, cy + 98 * s, 44 * s, 30 * s, hx("#f7f0ea"), H=H, outline=hx("#d8cfc6"), ow=1.5)
+            poly(c, [cx - 38 * s, (H or 0) - (cy + 132 * s), cx - 28 * s, (H or 0) - (cy + 104 * s),
+                     cx + 28 * s, (H or 0) - (cy + 104 * s), cx + 38 * s, (H or 0) - (cy + 132 * s)], hx("#efe6dd"))
+        elif top_id == "dungaree_blue":
+            ell(c, cx, cy + 98 * s, 42 * s, 28 * s, hx("#3f6fb0"), H=H)
+            line(c, [cx - 22 * s, (H or 0) - (cy + 76 * s), cx - 30 * s, (H or 0) - (cy + 108 * s)], hx("#3f6fb0"), 5)
+            line(c, [cx + 22 * s, (H or 0) - (cy + 76 * s), cx + 30 * s, (H or 0) - (cy + 108 * s)], hx("#3f6fb0"), 5)
+        elif top_id == "apron_yellow":
+            ell(c, cx, cy + 98 * s, 42 * s, 28 * s, hx("#f7d774"), H=H)
+            line(c, [cx - 22 * s, (H or 0) - (cy + 76 * s), cx - 30 * s, (H or 0) - (cy + 108 * s)], hx("#e8c850"), 4)
+            line(c, [cx + 22 * s, (H or 0) - (cy + 76 * s), cx + 30 * s, (H or 0) - (cy + 108 * s)], hx("#e8c850"), 4)
+        elif top_id == "hoodie_purple":
+            ell(c, cx, cy + 98 * s, 44 * s, 30 * s, hx("#9a7bc8"), H=H, outline=hx("#7d5fa8"), ow=1.5)
+            ell(c, cx, cy + 112 * s, 10 * s, 8 * s, hx("#ffffff"), H=H)
+        elif top_id == "sailor_red":
+            ell(c, cx, cy + 98 * s, 44 * s, 30 * s, hx("#d84a4a"), H=H, outline=hx("#b03a3a"), ow=1.5)
+            ell(c, cx, cy + 90 * s, 30 * s, 16 * s, hx("#ffffff"), H=H)
+        elif top_id == "dino_green":
+            ell(c, cx, cy + 98 * s, 46 * s, 32 * s, hx("#6bbf59"), H=H, outline=hx("#4a9a3a"), ow=1.5)
+            for dx in (-1, 0, 1):
+                poly(c, [cx + dx * 22 * s, (H or 0) - (cy + 84 * s), cx + dx * 22 * s - 8 * s,
+                         (H or 0) - (cy + 68 * s), cx + dx * 22 * s + 8 * s, (H or 0) - (cy + 68 * s)], hx("#4a9a3a"))
+        else:  # 其他上衣:通用色块
+            ell(c, cx, cy + 98 * s, 42 * s, 28 * s, hx("#f4a8c0"), H=H, outline=hx("#e08aa6"), ow=1.5)
+    # 下装(bottom)
+    if bottom_id:
+        if bottom_id == "jeans_blue":
+            ell(c, cx - 20 * s, cy + 140 * s, 16 * s, 18 * s, hx("#4a7dc0"), H=H)
+            ell(c, cx + 20 * s, cy + 140 * s, 16 * s, 18 * s, hx("#4a7dc0"), H=H)
+        elif bottom_id == "shorts_black":
+            ell(c, cx - 20 * s, cy + 138 * s, 15 * s, 14 * s, hx("#3a3a3a"), H=H)
+            ell(c, cx + 20 * s, cy + 138 * s, 15 * s, 14 * s, hx("#3a3a3a"), H=H)
+        elif bottom_id == "pants_khaki":
+            ell(c, cx - 20 * s, cy + 140 * s, 16 * s, 20 * s, hx("#c9b98a"), H=H)
+            ell(c, cx + 20 * s, cy + 140 * s, 16 * s, 20 * s, hx("#c9b98a"), H=H)
+        else:
+            ell(c, cx - 20 * s, cy + 140 * s, 15 * s, 16 * s, hx("#b09e88"), H=H)
+            ell(c, cx + 20 * s, cy + 140 * s, 15 * s, 16 * s, hx("#b09e88"), H=H)
+    # 帽子(hat)
+    if hat_id:
+        if hat_id == "cap":
+            ell(c, cx, cy - 40 * s, 34 * s, 14 * s, hx("#d84a4a"), H=H)
+            ell(c, cx, cy - 54 * s, 26 * s, 20 * s, hx("#e86a6a"), H=H)
+        elif hat_id == "beret":
+            ell(c, cx, cy - 48 * s, 32 * s, 18 * s, hx("#9a7bc8"), H=H, outline=hx("#7d5fa8"), ow=1.5)
+        elif hat_id == "sunhat":
+            ell(c, cx, cy - 44 * s, 40 * s, 12 * s, hx("#f7d774"), H=H)
+            ell(c, cx, cy - 56 * s, 22 * s, 18 * s, hx("#f9e39a"), H=H)
+        else:
+            ell(c, cx, cy - 48 * s, 30 * s, 16 * s, hx("#e8837a"), H=H)
+    # 配饰(acc)
+    if acc_id:
+        if acc_id == "crown":
+            poly(c, [cx - 20 * s, (H or 0) - (cy - 62 * s), cx - 20 * s, (H or 0) - (cy - 82 * s),
+                     cx - 10 * s, (H or 0) - (cy - 72 * s), cx, (H or 0) - (cy - 88 * s),
+                     cx + 10 * s, (H or 0) - (cy - 72 * s), cx + 20 * s, (H or 0) - (cy - 82 * s),
+                     cx + 20 * s, (H or 0) - (cy - 62 * s)], hx("#f0c75e"))
+        elif acc_id == "pearl":
+            ell(c, cx - 30 * s, cy - 6 * s, 4 * s, 4 * s, hx("#ffffff"), H=H)
+            ell(c, cx - 20 * s, cy - 8 * s, 4 * s, 4 * s, hx("#ffffff"), H=H)
+            ell(c, cx - 10 * s, cy - 6 * s, 4 * s, 4 * s, hx("#ffffff"), H=H)
+        elif acc_id == "bell":
+            ell(c, cx, cy + 52 * s, 7 * s, 9 * s, hx("#f0c75e"), H=H, outline=hx("#c9a23d"), ow=1)
+        else:
+            ell(c, cx - 24 * s, cy + 44 * s, 6 * s, 6 * s, hx("#e8837a"), H=H)
+            ell(c, cx + 24 * s, cy + 44 * s, 6 * s, 6 * s, hx("#e8837a"), H=H)
 
 
 def draw_kitten(c, cx, cy, s, k, H=None):
@@ -241,12 +337,183 @@ def mkbtn(text, on, **kw):
     return b
 
 
+# ==================== 场景家具绘制(Kivy 移植桌面版 _draw_item) ====================
+_FUR_ANCHOR_KV = {
+    "sofa": (0.16, 0.68), "chair": (0.06, 0.74), "table": (0.56, 0.72),
+    "desk": (0.80, 0.62), "bed": (0.34, 0.58), "crib": (0.64, 0.64),
+    "rug": (0.35, 0.84), "plant": (0.045, 0.58), "bookshelf": (0.93, 0.30),
+    "lamp": (0.75, 0.46), "painting": (0.68, 0.15),
+    "phone": (0.525, 0.32), "tablet": (0.575, 0.30), "computer": (0.78, 0.60),
+    "tv": (0.885, 0.54), "fridge": (0.95, 0.60), "washer": (0.91, 0.66),
+    "ac": (0.48, 0.09), "robot": (0.70, 0.86),
+    "birdcage": (0.11, 0.44), "fishbowl": (0.945, 0.70),
+    "baby_table_1": (0.18, 0.80), "baby_table_2": (0.50, 0.80), "baby_table_3": (0.82, 0.80),
+}
+
+
+def _scene_pos_kv(w, h, key):
+    fx, fy = _FUR_ANCHOR_KV.get(key, (0.5, 0.5))
+    return w * fx, h * fy
+
+
+def _draw_item_kv(c, w, h, item_id):
+    """按锚点绘制单个家具/科技/装饰(Kivy 版)。"""
+    x, y = _scene_pos_kv(w, h, item_id)
+    u = h / 150.0  # 参考单位
+    if item_id == "sofa":
+        c.add(Color(*hx("#e8837a")))
+        c.add(Rectangle(pos=(x - 60 * u, y - 30 * u), size=(120 * u, 60 * u)))
+        c.add(Color(*hx("#d06a58")))
+        c.add(Rectangle(pos=(x - 60 * u, y - 30 * u), size=(15 * u, 60 * u)))
+        c.add(Rectangle(pos=(x + 45 * u, y - 30 * u), size=(15 * u, 60 * u)))
+        c.add(Color(*hx("#f0957b")))
+        c.add(Rectangle(pos=(x - 55 * u, y - 42 * u), size=(110 * u, 14 * u)))
+    elif item_id == "chair":
+        c.add(Color(*hx("#85b7eb")))
+        c.add(Rectangle(pos=(x - 28 * u, y - 24 * u), size=(56 * u, 52 * u)))
+        c.add(Color(*hx("#a3c8f0")))
+        c.add(Rectangle(pos=(x - 28 * u, y - 32 * u), size=(56 * u, 12 * u)))
+    elif item_id == "table":
+        c.add(Color(*hx(C.WOOD)))
+        c.add(Rectangle(pos=(x - 55 * u, y - 12 * u), size=(110 * u, 8 * u)))
+        c.add(Color(*hx(C.WOOD_D)))
+        c.add(Rectangle(pos=(x - 40 * u, y - 4 * u), size=(8 * u, 30 * u)))
+        c.add(Rectangle(pos=(x + 32 * u, y - 4 * u), size=(8 * u, 30 * u)))
+    elif item_id == "desk":
+        c.add(Color(*hx("#a5714f")))
+        c.add(Rectangle(pos=(x - 50 * u, y - 10 * u), size=(100 * u, 8 * u)))
+        c.add(Color(*hx("#83583c")))
+        c.add(Rectangle(pos=(x - 44 * u, y - 2 * u), size=(8 * u, 24 * u)))
+        c.add(Rectangle(pos=(x + 36 * u, y - 2 * u), size=(8 * u, 24 * u)))
+    elif item_id == "bed":
+        c.add(Color(*hx("#a3c8f0")))
+        c.add(Rectangle(pos=(x - 70 * u, y - 20 * u), size=(140 * u, 54 * u)))
+        c.add(Color(*hx("#ffffff")))
+        c.add(Rectangle(pos=(x - 64 * u, y - 12 * u), size=(128 * u, 38 * u)))
+        c.add(Color(*hx("#ffffff")))
+        c.add(Ellipse(pos=(x - 30 * u, y - 24 * u), size=(24 * u, 16 * u)))
+    elif item_id == "crib":
+        c.add(Color(*hx("#e8d5b8")))
+        c.add(Rectangle(pos=(x - 50 * u, y - 26 * u), size=(100 * u, 48 * u)))
+        c.add(Color(*hx("#fff6ec")))
+        c.add(Rectangle(pos=(x - 44 * u, y - 20 * u), size=(88 * u, 34 * u)))
+        c.add(Color(*hx("#b8a07a")))
+        c.add(Rectangle(pos=(x - 48 * u, y + 22 * u), size=(6 * u, 18 * u)))
+        c.add(Rectangle(pos=(x + 42 * u, y + 22 * u), size=(6 * u, 18 * u)))
+    elif item_id == "rug":
+        c.add(Color(*hx("#f7c1c1")))
+        c.add(Ellipse(pos=(x - 70 * u, y - 20 * u), size=(140 * u, 40 * u)))
+        c.add(Color(*hx("#fbeaf0")))
+        c.add(Ellipse(pos=(x - 45 * u, y - 12 * u), size=(90 * u, 24 * u)))
+    elif item_id == "plant":
+        c.add(Color(*hx("#c9714f")))
+        c.add(Rectangle(pos=(x - 10 * u, y + 8 * u), size=(20 * u, 18 * u)))
+        c.add(Color(*hx("#97c459")))
+        c.add(Ellipse(pos=(x - 18 * u, y - 4 * u), size=(36 * u, 20 * u)))
+    elif item_id == "bookshelf":
+        c.add(Color(*hx("#c9a06a")))
+        c.add(Rectangle(pos=(x - 26 * u, y - 34 * u), size=(52 * u, 68 * u)))
+        c.add(Color(*hx("#9a7a4a")))
+        for i in range(4):
+            c.add(Line(points=[x - 26 * u, y - 34 * u + (i + 1) * 17 * u,
+                               x + 26 * u, y - 34 * u + (i + 1) * 17 * u], width=2))
+        colors = ["#e8837a", "#85b7eb", "#f0c75e"]
+        for i in range(6):
+            c.add(Color(*hx(colors[i % 3])))
+            c.add(Rectangle(pos=(x - 20 * u + (i % 3) * 14 * u, y - 30 * u + (i // 3) * 30 * u),
+                            size=(10 * u, 14 * u)))
+    elif item_id == "lamp":
+        c.add(Color(*hx("#9a7a4a")))
+        c.add(Rectangle(pos=(x - 4 * u, y - 6 * u), size=(8 * u, 36 * u)))
+        c.add(Color(*hx("#f0c75e")))
+        c.add(Ellipse(pos=(x - 16 * u, y - 26 * u), size=(32 * u, 28 * u)))
+    elif item_id == "painting":
+        c.add(Color(*hx("#efe3cf")))
+        c.add(Rectangle(pos=(x - 35 * u, y - 25 * u), size=(70 * u, 50 * u)))
+        c.add(Color(*hx("#e8837a")))
+        c.add(Line(points=[x - 25 * u, y + 13 * u, x - 3 * u, y - 7 * u], width=3))
+        c.add(Color(*hx("#7bc47f")))
+        c.add(Line(points=[x - 3 * u, y - 7 * u, x + 23 * u, y + 11 * u], width=3))
+    elif item_id == "phone":
+        c.add(Color(*hx("#e8837a")))
+        c.add(Rectangle(pos=(x - 10 * u, y - 20 * u), size=(20 * u, 38 * u)))
+        c.add(Color(*hx("#ffffff")))
+        c.add(Rectangle(pos=(x - 7 * u, y - 17 * u), size=(14 * u, 22 * u)))
+    elif item_id == "tablet":
+        c.add(Color(*hx("#85b7eb")))
+        c.add(Rectangle(pos=(x - 14 * u, y - 22 * u), size=(28 * u, 36 * u)))
+        c.add(Color(*hx("#ffffff")))
+        c.add(Rectangle(pos=(x - 11 * u, y - 19 * u), size=(22 * u, 26 * u)))
+    elif item_id == "computer":
+        c.add(Color(*hx("#5b5b5b")))
+        c.add(Rectangle(pos=(x - 20 * u, y - 22 * u), size=(40 * u, 30 * u)))
+        c.add(Color(*hx("#85b7eb")))
+        c.add(Rectangle(pos=(x - 18 * u, y - 20 * u), size=(36 * u, 26 * u)))
+        c.add(Color(*hx("#5b5b5b")))
+        c.add(Rectangle(pos=(x - 22 * u, y + 8 * u), size=(44 * u, 6 * u)))
+    elif item_id == "tv":
+        c.add(Color(*hx("#4a4a4a")))
+        c.add(Rectangle(pos=(x - 30 * u, y - 24 * u), size=(60 * u, 40 * u)))
+        c.add(Color(*hx("#85b7eb")))
+        c.add(Rectangle(pos=(x - 27 * u, y - 21 * u), size=(54 * u, 34 * u)))
+        c.add(Color(*hx("#4a4a4a")))
+        c.add(Rectangle(pos=(x - 12 * u, y + 16 * u), size=(24 * u, 6 * u)))
+    elif item_id == "fridge":
+        c.add(Color(*hx("#d8e8f5")))
+        c.add(Rectangle(pos=(x - 25 * u, y - 35 * u), size=(50 * u, 70 * u)))
+        c.add(Color(*hx("#b8d4ea")))
+        c.add(Rectangle(pos=(x - 25 * u, y - 35 * u), size=(50 * u, 6 * u)))
+        c.add(Color(*hx("#b8d4ea")))
+        c.add(Rectangle(pos=(x - 25 * u, y - 2 * u), size=(50 * u, 6 * u)))
+    elif item_id == "washer":
+        c.add(Color(*hx("#e8e8e8")))
+        c.add(Rectangle(pos=(x - 25 * u, y - 30 * u), size=(50 * u, 60 * u)))
+        c.add(Color(*hx("#85b7eb")))
+        c.add(Ellipse(pos=(x - 12 * u, y - 16 * u), size=(24 * u, 24 * u)))
+    elif item_id == "ac":
+        c.add(Color(*hx("#e8e8e8")))
+        c.add(Rectangle(pos=(x - 40 * u, y - 18 * u), size=(80 * u, 30 * u)))
+        c.add(Color(*hx("#c8c8c8")))
+        c.add(Line(points=[x - 35 * u, y - 12 * u, x + 35 * u, y - 12 * u], width=2))
+        c.add(Line(points=[x - 35 * u, y - 4 * u, x + 35 * u, y - 4 * u], width=2))
+    elif item_id == "robot":
+        c.add(Color(*hx("#c8c8c8")))
+        c.add(Rectangle(pos=(x - 18 * u, y - 25 * u), size=(36 * u, 40 * u)))
+        c.add(Color(*hx("#85b7eb")))
+        c.add(Ellipse(pos=(x - 12 * u, y - 12 * u), size=(24 * u, 16 * u)))
+        c.add(Color(*hx("#c8c8c8")))
+        c.add(Rectangle(pos=(x - 14 * u, y + 15 * u), size=(28 * u, 8 * u)))
+        c.add(Color(*hx("#c8c8c8")))
+        c.add(Rectangle(pos=(x - 18 * u, y - 35 * u), size=(36 * u, 8 * u)))
+    elif item_id == "birdcage":
+        c.add(Color(*hx("#d8c8a8")))
+        c.add(Rectangle(pos=(x - 22 * u, y - 30 * u), size=(44 * u, 40 * u)))
+        c.add(Color(*hx("#b8a07a")))
+        c.add(Line(points=[x - 22 * u, y - 30 * u, x + 22 * u, y - 30 * u], width=2))
+        c.add(Line(points=[x - 22 * u, y - 30 * u, x - 22 * u, y + 10 * u], width=1))
+        c.add(Line(points=[x + 22 * u, y - 30 * u, x + 22 * u, y + 10 * u], width=1))
+        c.add(Line(points=[x - 22 * u, y - 10 * u, x + 22 * u, y - 10 * u], width=1))
+        c.add(Color(*hx("#f0c75e")))
+        c.add(Ellipse(pos=(x - 6 * u, y - 16 * u), size=(12 * u, 14 * u)))
+    elif item_id == "fishbowl":
+        c.add(Color(*hx("#cfe8f5")))
+        c.add(Ellipse(pos=(x - 22 * u, y - 16 * u), size=(44 * u, 34 * u)))
+        c.add(Color(*hx("#b8d4ea")))
+        c.add(Line(points=[x - 14 * u, y - 16 * u, x - 14 * u, y - 22 * u], width=2))
+        c.add(Line(points=[x + 14 * u, y - 16 * u, x + 14 * u, y - 22 * u], width=2))
+    elif item_id == "baby_table_1" or item_id == "baby_table_2" or item_id == "baby_table_3":
+        c.add(Color(*hx(C.WOOD)))
+        c.add(Rectangle(pos=(x - 20 * u, y - 12 * u), size=(40 * u, 8 * u)))
+        c.add(Color(*hx(C.WOOD_D)))
+        c.add(Rectangle(pos=(x - 16 * u, y - 4 * u), size=(6 * u, 18 * u)))
+        c.add(Rectangle(pos=(x + 10 * u, y - 4 * u), size=(6 * u, 18 * u)))
+
+
 class CatCanvas(Widget):
     def __init__(self, game, **kw):
         super().__init__(**kw)
         self.game = game
         self._need_redraw = True
-
     def on_touch_move(self, touch):
         if self.collide_point(*touch.pos):
             self.game.tx = touch.x
@@ -271,20 +538,67 @@ class CatCanvas(Widget):
         c = self.canvas
         c.clear()
         s = C.CAT_SCALE
-        # 背景
-        c.add(Color(*hx("#fdf3e4")))
-        c.add(Rectangle(pos=(0, 0), size=(W, H)))
-        c.add(Color(*hx("#e8d5b8")))
-        c.add(Rectangle(pos=(0, 0), size=(W, 60)))
-        # 简化家具(沙发/电视/桌子色块)
-        for fx, fy, fw, fh, col in ((W * 0.08, 70, 160, 90, "#c98a5a"), (W * 0.72, 70, 170, 95, "#8a5a3a"),
-                                    (W * 0.42, 70, 140, 80, "#b98a5a")):
-            c.add(Color(*hx(col)))
-            c.add(Rectangle(pos=(fx, fy), size=(fw, fh)))
+        # ===== 完整场景绘制(移植桌面版 draw_scene)=====
+        ground = H - 60
+        # 墙面
+        c.add(Color(*hx(C.WALL)))
+        c.add(Rectangle(pos=(0, 0), size=(W, ground)))
+        # 地板(带木纹线)
+        c.add(Color(*hx(C.FLOOR)))
+        c.add(Rectangle(pos=(0, ground - 8), size=(W, 8 + 60)))
+        for i in range(0, int(W), 90):
+            c.add(Color(*hx(C.FLOOR_LINE)))
+            c.add(Line(points=[i, ground - 8, i, ground + 52], width=1))
+        # 踢脚线
+        c.add(Color(*hx("#d9c3a3")))
+        c.add(Rectangle(pos=(0, ground - 10), size=(W, 10)))
+        # 窗户(左上)
+        wx, wy = W * 0.05, H * 0.06
+        c.add(Color(*hx(C.WINDOW)))
+        c.add(Rectangle(pos=(wx, wy), size=(min(130, W * 0.2), 100)))
+        c.add(Color(*hx("#b8a07a")))
+        c.add(Line(points=[wx + 65, wy, wx + 65, wy + 100], width=2))
+        c.add(Line(points=[wx, wy + 50, wx + 130, wy + 50], width=2))
+        # 门(右侧)
+        dx, dy = W * 0.98 - 110, ground - 130
+        c.add(Color(*hx("#c9a06a")))
+        c.add(Rectangle(pos=(dx, dy), size=(90, ground - dy)))
+        c.add(Color(*hx("#9a7a4a")))
+        c.add(Line(points=[dx, dy, dx, ground, dx + 90, ground, dx + 90, dy], width=2))
+        c.add(Color(*hx("#f0c75e")))
+        c.add(Ellipse(pos=(dx + 68, dy + 55), size=(8, 8)))
+        # 挂画
+        px, py = W * 0.70, H * 0.10
+        c.add(Color(*hx("#efe3cf")))
+        c.add(Rectangle(pos=(px, py), size=(70, 50)))
+        c.add(Color(*hx("#b8a07a")))
+        c.add(Line(points=[px, py, px + 70, py, px + 70, py + 50, px, py + 50, px, py], width=2))
+        c.add(Color(*hx("#e8837a")))
+        c.add(Line(points=[px + 10, py + 38, px + 32, py + 18], width=3))
+        c.add(Color(*hx("#7bc47f")))
+        c.add(Line(points=[px + 32, py + 18, px + 58, py + 36], width=3))
+        # 家具/科技/装饰(动态,按已购集合)
+        for fid in (list(getattr(g, "furniture", [])) + list(getattr(g, "tech", [])) + list(C.SCENE_DECOR)):
+            _draw_item_kv(c, W, H, fid)
+        # 鱼缸小鱼(数量)
+        fx, fy = W * 0.945, H * 0.70
+        for i in range(min(getattr(g, "fish", 0), 10)):
+            c.add(Color(*hx("#e8837a")))
+            c.add(Ellipse(pos=(fx - 22 + (i % 5) * 10, fy - 8 + (i // 5) * 14), size=(6, 4)))
+        # 小鸟(鸟笼)
+        if getattr(g, "birds", 0) > 0:
+            bx, by = W * 0.11, H * 0.44
+            c.add(Color(*hx("#f0c75e")))
+            c.add(Ellipse(pos=(bx - 8, by - 6), size=(10, 12)))
+            c.add(Ellipse(pos=(bx - 6, by - 9), size=(5, 5)))
+            c.add(Color(*hx("#e8837a")))
+            c.add(Line(points=[bx - 5, by - 7, bx - 1, by - 5, bx - 5, by - 4], width=1))
         # 母猫
-        draw_cat(c, g.cat_x, g.cat_y, s, "female", preg=g.pregnancy, H=H)
+        draw_cat(c, g.cat_x, g.cat_y, s, "female", preg=g.pregnancy, H=H,
+                 equipped=g.equipped.get("female", {}) if hasattr(g, "equipped") else None)
         # 公猫
-        draw_cat(c, g.male_x, g.male_y, s, "male", H=H)
+        draw_cat(c, g.male_x, g.male_y, s, "male", H=H,
+                 equipped=g.equipped.get("male", {}) if hasattr(g, "equipped") else None)
         # 小猫站位
         sw = g._swaddled()
         others = [k for k in g.kittens if k["stage"] != "swaddle"]
