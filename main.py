@@ -359,7 +359,7 @@ def _scene_pos_kv(w, h, key):
 def _draw_item_kv(c, w, h, item_id):
     """按锚点绘制单个家具/科技/装饰(Kivy 版)。"""
     x, y = _scene_pos_kv(w, h, item_id)
-    u = h / 150.0  # 参考单位
+    u = min(w, h) / 350.0  # 参考单位(用较小边,避免大屏过度拉伸)
     if item_id == "sofa":
         c.add(Color(*hx("#e8837a")))
         c.add(Rectangle(pos=(x - 60 * u, y + 30 * u), size=(120 * u, 60 * u)))
@@ -514,8 +514,18 @@ class CatCanvas(Widget):
         super().__init__(**kw)
         self.game = game
         self._need_redraw = True
-        self._marks = []  # 必初始化,防止 _update 访问时缺失崩溃
+        self._marks = []
         self._marks_l = None
+        # 画布有一个明显的米色背景(防止空白区显示 Kivy 黑色默认背景)
+        with self.canvas.before:
+            from kivy.graphics import Color, Rectangle as R
+            Color(*hx("#fdf3e4"))
+            self._bg_rect = R(pos=self.pos, size=self.size)
+        self.bind(pos=self._update_bg, size=self._update_bg)
+
+    def _update_bg(self, *_):
+        self._bg_rect.pos = self.pos
+        self._bg_rect.size = self.size
     def on_touch_move(self, touch):
         if self.collide_point(*touch.pos):
             self.game.tx = touch.x
