@@ -551,9 +551,10 @@ class CatCanvas(Widget):
         c = self.canvas
         try:
             c.clear()
-            s = C.CAT_SCALE
+            # 猫/动物缩放:综合宽高自适应(大屏平板猫约占屏幕宽 12%)
+            s = C.CAT_SCALE * max(0.6, min(2.6, (W / 6.5 + H) / 360.0))
             # ===== 完整场景绘制(Kivy 坐标:y=0 在底部,向上增长)=====
-            ground = 60  # 地板在底部 60px
+            ground = max(40, int(H * 0.10))  # 地板高度随屏幕缩放(约10%)
             # 墙面(占满除底部地板外区域)
             c.add(Color(*hx(C.WALL)))
             c.add(Rectangle(pos=(0, ground), size=(W, H - ground)))
