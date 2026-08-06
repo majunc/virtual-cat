@@ -521,22 +521,30 @@ class CatCanvas(Widget):
             from kivy.graphics import Color, Rectangle as R
             Color(*hx("#fdf3e4"))
             self._bg_rect = R(pos=self.pos, size=self.size)
-        self.bind(pos=self._update_bg, size=self._update_bg)
+        self.bind(pos=self._update_bg, size=self._on_resize)
 
     def _update_bg(self, *_):
         self._bg_rect.pos = self.pos
         self._bg_rect.size = self.size
+
+    def _on_resize(self, *_):
+        # 尺寸变化时强制重绘(首次启动 widget 默认 100x100 时不会绘制,要等 on_size)
+        self._update_bg()
+        if self.width >= 50 and self.height >= 50:
+            Clock.schedule_once(lambda dt: self.draw(), 0.05)
+
     def on_touch_move(self, touch):
         if self.collide_point(*touch.pos):
-            self.game.tx = touch.x
-            self.game.ty = touch.y
+            # touch.x/y 是相对本 widget 的坐标,转成屏幕坐标给 game
+            self.game.tx = touch.x + self.x
+            self.game.ty = touch.y + self.y
             return True
         return super().on_touch_move(touch)
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            self.game.tx = touch.x
-            self.game.ty = touch.y
+            self.game.tx = touch.x + self.x
+            self.game.ty = touch.y + self.y
             return True
         return super().on_touch_down(touch)
 
@@ -686,8 +694,10 @@ class MainApp(App):
         for key, label, col in (("hunger", "🍖饱腹", "#97c459"), ("happiness", "💗快乐", "#f0c75e"),
                                 ("energy", "⚡体力", "#85b7eb"), ("health", "❤️健康", "#e27979")):
             row = BoxLayout(size_hint_y=None, height=dp(13), spacing=dp(2))
-            row.add_widget(Label(text=label, size_hint_x=None, width=dp(52), font_size=sp(8),
-                                 color=hx("#5a4632")))
+            _lb = Label(text=label, font_size=sp(8), color=hx("#5a4632"))
+            _lb.size_hint_x = None
+            _lb.width = dp(52)
+            row.add_widget(_lb)
             pb = ProgressBar(max=100, value=80, size_hint_y=None, height=dp(9))
             row.add_widget(pb)
             self.bars[key] = pb
@@ -699,8 +709,10 @@ class MainApp(App):
         for key, label, col in (("grow", "🍼成长", "#f4a8c0"), ("study", "🎓学业", "#85b7eb"),
                                 ("preg", "🤰孕周", "#e889a9")):
             row = BoxLayout(size_hint_y=None, height=dp(12), spacing=dp(2))
-            row.add_widget(Label(text=label, size_hint_x=None, width=dp(40), font_size=sp(7),
-                                 color=hx("#a08a72")))
+            _lb2 = Label(text=label, font_size=sp(7), color=hx("#a08a72"))
+            _lb2.size_hint_x = None
+            _lb2.width = dp(40)
+            row.add_widget(_lb2)
             pb = ProgressBar(max=100, value=0, size_hint_y=None, height=dp(8))
             row.add_widget(pb)
             self.minis[key] = pb
@@ -816,7 +828,9 @@ class MainApp(App):
             b = Button(text=btn_text, **(BTN if can else DIS))
             if can:
                 b.bind(on_release=lambda w, f=fn: f())
-            row.add_widget(b, size_hint_x=None, width=dp(110))
+            b.size_hint_x = None
+            b.width = dp(110)
+            row.add_widget(b)
         inner.add_widget(row)
         if tip:
             inner.add_widget(Label(text=tip, font_size=sp(9), color=hx("#a08a72"),
