@@ -12,6 +12,10 @@ package.domain = org.example
 # develop 分支已移除该 pip 自升级逻辑(2026-08-06 查证 build.py)
 p4a.branch = develop
 
+# 本地 recipes 覆盖:libthorvg(develop 内置版 glob 找不到 libomp.so 会 IndexError,
+# 见 recipes/libthorvg/__init__.py)
+p4a.local_recipes = %(source.dir)s/recipes
+
 # 源码
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf
