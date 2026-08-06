@@ -68,40 +68,93 @@ def line(c, pts, color, width=2):
 
 
 def draw_mouse(c, m, H):
+    """老鼠:带轮廓线+耳朵+眼睛+胡须+尾巴(移植桌面版绘制)"""
     e = hx("#d9c9b8") if not m.gold else hx("#f0c75e")
     ec = hx("#c4b09a") if not m.gold else hx("#c9a23d")
-    ell(c, m.x, m.y, 16, 10, e, H=H)
-    ell(c, m.x + 16, m.y - 2, 8, 7, e, H=H)
-    ell(c, m.x - 8, m.y + 4, 3, 3, e, H=H)
-    ell(c, m.x - 14, m.y - 6, 4, 4, e, H=H)
-    ell(c, m.x + 18, m.y - 6, 4, 4, e, H=H)
-    line(c, [m.x - 4, m.y - 8, m.x - 14, m.y - 18], ec, 2)
-    line(c, [m.x + 6, m.y - 8, m.x + 10, m.y - 20], ec, 2)
+    # 身体+头
+    ell(c, m.x, m.y, 16, 10, e, H=H, outline=ec, ow=1.5)
+    ell(c, m.x + 16, m.y - 2, 8, 7, e, H=H, outline=ec, ow=1.5)
+    # 耳朵(圆形)
+    ell(c, m.x - 10, m.y - 6, 4, 5, e, H=H, outline=ec, ow=1.2)
+    ell(c, m.x + 2, m.y - 8, 4, 5, e, H=H, outline=ec, ow=1.2)
+    ell(c, m.x - 10, m.y - 6, 2, 3, hx("#f4a8c0"), H=H)
+    ell(c, m.x + 2, m.y - 8, 2, 3, hx("#f4a8c0"), H=H)
+    # 眼睛
+    ell(c, m.x - 6, m.y - 2, 1.8, 2.2, hx(C.DARK), H=H)
+    ell(c, m.x + 5, m.y - 2, 1.8, 2.2, hx(C.DARK), H=H)
+    # 鼻子
+    ell(c, m.x + 11, m.y - 1, 2.5, 2, hx("#e8837a"), H=H)
+    # 胡须
+    line(c, [m.x + 8, m.y - 5, m.x + 16, m.y - 7], ec, 1)
+    line(c, [m.x + 8, m.y + 1, m.x + 16, m.y + 2], ec, 1)
+    # 尾巴(弯曲)
+    line(c, [m.x - 16, m.y - 1, m.x - 24, m.y + 6, m.x - 22, m.y + 13], ec, 2)
+
+
+def draw_tail(c, cx, cy, s, H=None):
+    """猫尾巴:摇摆动画(移植桌面版)"""
+    import time as _t
+    a = _t.time() * 3.2
+    sw = 14 * s
+    pts = [cx + 71 * s, (H or 0) - (cy + 116 * s),
+           cx + 115 * s, (H or 0) - (cy + 100 * s + sw * 0.3),
+           cx + 123 * s, (H or 0) - (cy + 64 * s + sw),
+           cx + 95 * s, (H or 0) - (cy + 38 * s + sw * 1.3)]
+    c.add(Color(*hx(C.CAT_WHITE_D)))
+    c.add(Line(points=pts, width=13 * s))
 
 
 def draw_cat(c, cx, cy, s, gender, preg=0.0, H=None):
+    """猫:完整移植桌面版(轮廓线+内耳+腮红+胡须+蝴蝶结+尾巴)"""
     fur = hx(C.CAT_MALE) if gender == "male" else hx(C.CAT_WHITE)
+    fur_d = hx(C.CAT_WHITE_D)
     belly = hx(C.BELLY)
+    # 尾巴(摆动)
+    draw_tail(c, cx, cy, s, H=H)
+    # 阴影
     ell(c, cx, cy + 158 * s, 80 * s, 8 * s, hx("#000000"), H=H)
+    # 身体(带轮廓线)
     bw = (66 + 55 * min(1.0, preg / 100.0)) if preg > C.PREG_BELLY_SHOW else 65
-    ell(c, cx, cy + 108 * s, bw * s, 44 * s, fur, H=H)
+    ell(c, cx, cy + 108 * s, bw * s, 44 * s, fur, H=H, outline=fur_d, ow=2)
     ell(c, cx, cy + 120 * s, (bw - 20) * s, 32 * s, belly, H=H)
-    ell(c, cx, cy, 62 * s, 62 * s, fur, H=H)
+    # 腿
+    ell(c, cx - 28 * s, cy + 138 * s, 14 * s, 16 * s, fur, H=H, outline=fur_d, ow=2)
+    ell(c, cx + 28 * s, cy + 138 * s, 14 * s, 16 * s, fur, H=H, outline=fur_d, ow=2)
+    # 头(带轮廓线)
+    ell(c, cx, cy, 62 * s, 62 * s, fur, H=H, outline=fur_d, ow=2)
+    # 头顶毛发
+    poly(c, [cx - 8 * s, (H or 0) - (cy - 58 * s), cx + 2 * s, (H or 0) - (cy - 80 * s),
+             cx + 12 * s, (H or 0) - (cy - 58 * s)], fur_d)
+    # 耳朵(外+内)
     poly(c, [cx - 57 * s, (H or 0) - (cy - 32 * s), cx - 77 * s, (H or 0) - (cy - 104 * s),
              cx - 13 * s, (H or 0) - (cy - 62 * s)], fur)
-    poly(c, [cx + 57 * s, (H or 0) - (cy - 32 * s), cx + 77 * s, (H or 0) - (cy - 104 * s),
-             cx + 13 * s, (H or 0) - (cy - 62 * s)], fur)
     poly(c, [cx - 53 * s, (H or 0) - (cy - 40 * s), cx - 65 * s, (H or 0) - (cy - 88 * s),
              cx - 25 * s, (H or 0) - (cy - 62 * s)], hx(C.INNER))
+    poly(c, [cx + 57 * s, (H or 0) - (cy - 32 * s), cx + 77 * s, (H or 0) - (cy - 104 * s),
+             cx + 13 * s, (H or 0) - (cy - 62 * s)], fur)
     poly(c, [cx + 53 * s, (H or 0) - (cy - 40 * s), cx + 65 * s, (H or 0) - (cy - 88 * s),
              cx + 25 * s, (H or 0) - (cy - 62 * s)], hx(C.INNER))
+    # 眼睛(带高光)
+    for dx in (-1, 1):
+        ex = cx + dx * 23 * s
+        ell(c, ex, cy + 2 * s, 9 * s, 9 * s, hx(C.DARK), H=H)
+        ell(c, ex - 3 * s, cy - 1 * s, 2.5 * s, 2.5 * s, hx("#ffffff"), H=H)
+    # 鼻子
     poly(c, [cx - 6 * s, (H or 0) - (cy + 22 * s), cx + 6 * s, (H or 0) - (cy + 22 * s),
              cx, (H or 0) - (cy + 31 * s)], hx(C.NOSE))
-    ell(c, cx - 29 * s, cy + 36 * s, 9 * s, 8 * s, hx(C.BLUSH), H=H)
-    ell(c, cx + 29 * s, cy + 36 * s, 9 * s, 8 * s, hx(C.BLUSH), H=H)
+    # 嘴(微笑弧线)
+    line(c, [cx - 12 * s, (H or 0) - (cy + 26 * s), cx - 6 * s, (H or 0) - (cy + 33 * s),
+             cx, (H or 0) - (cy + 26 * s)], hx(C.DARK), 2)
+    line(c, [cx + 12 * s, (H or 0) - (cy + 26 * s), cx + 6 * s, (H or 0) - (cy + 33 * s),
+             cx, (H or 0) - (cy + 26 * s)], hx(C.DARK), 2)
+    # 腮红
+    ell(c, cx - 38 * s, cy + 30 * s, 9 * s, 8 * s, hx(C.BLUSH), H=H)
+    ell(c, cx + 38 * s, cy + 30 * s, 9 * s, 8 * s, hx(C.BLUSH), H=H)
+    # 胡须
     for dx, y1, y2 in ((-1, 16, 8), (-1, 26, 26), (-1, 36, 44), (1, 16, 8), (1, 26, 26), (1, 36, 44)):
         line(c, [cx + 38 * dx * s, (H or 0) - (cy + y1 * s),
                  cx + 92 * dx * s, (H or 0) - (cy + y2 * s)], hx("#c99b6a"), 1.8)
+    # 性别标记:公猫=蓝领结,母猫=蝴蝶结(带轮廓)
     if gender == "male":
         bx, by = cx, cy + 46 * s
         poly(c, [bx - 16 * s, (H or 0) - (by - 10 * s), bx, (H or 0) - (by + 8 * s),
@@ -109,9 +162,11 @@ def draw_cat(c, cx, cy, s, gender, preg=0.0, H=None):
         ell(c, bx, by, 4 * s, 4 * s, hx("#4a7dc0"), H=H)
     else:
         bx, by = cx - 58 * s, cy - 24 * s
-        ell(c, bx - 6 * s, by - 1 * s, 9 * s, 11 * s, hx(C.BOW_PINK), H=H)
-        ell(c, bx + 6 * s, by - 3 * s, 9 * s, 11 * s, hx(C.BOW_BLUE), H=H)
-        ell(c, bx, by, 7 * s, 7 * s, hx("#e889a9"), H=H)
+        ell(c, bx - 15 * s, by - 12 * s, 9 * s, 11 * s, hx(C.BOW_PINK), H=H, outline=hx("#e889a9"), ow=1.5)
+        ell(c, bx + 3 * s, by - 14 * s, 9 * s, 11 * s, hx(C.BOW_BLUE), H=H, outline=hx("#e889a9"), ow=1.5)
+        ell(c, bx - 7 * s, by - 7 * s, 7 * s, 7 * s, hx("#e889a9"), H=H)
+        line(c, [bx, by + 6 * s, bx - 3 * s, by + 18 * s], hx(C.BOW_PINK), 2)
+        line(c, [bx + 2 * s, by + 6 * s, bx + 5 * s, by + 17 * s], hx(C.BOW_BLUE), 2)
 
 
 def draw_kitten(c, cx, cy, s, k, H=None):
@@ -136,12 +191,13 @@ def draw_kitten(c, cx, cy, s, k, H=None):
             ell(c, bx + 4 * s, by - 1 * s, 6 * s, 7 * s, hx(C.BOW_BLUE), H=H)
     else:
         bw = (66 + 50 * min(1.0, k.get("preg", 0) / 100.0)) if (k["sex"] == C.SEX_F and k.get("preg", 0) > C.PREG_BELLY_SHOW) else 65
-        ell(c, cx, cy + 108 * s, bw * s, 44 * s, fur, H=H)
+        fur_d = hx(C.CAT_WHITE_D)
+        ell(c, cx, cy + 108 * s, bw * s, 44 * s, fur, H=H, outline=fur_d, ow=1.5)
         if k["stage"] == "school":
             ell(c, cx, cy + 90 * s, 46 * s, 30 * s, hx("#4a6ea8"), H=H)
             poly(c, [cx - 12 * s, (H or 0) - (cy + 66 * s), cx + 12 * s, (H or 0) - (cy + 66 * s),
                      cx, (H or 0) - (cy + 104 * s)], hx("#d84a4a"))
-        ell(c, cx, cy, 62 * s, 62 * s, fur, H=H)
+        ell(c, cx, cy, 62 * s, 62 * s, fur, H=H, outline=fur_d, ow=1.5)
         if sex == C.SEX_M:
             bx, by = cx, cy + 40 * s
             poly(c, [bx - 13 * s, (H or 0) - (by - 8 * s), bx, (H or 0) - (by + 6 * s),
@@ -151,12 +207,20 @@ def draw_kitten(c, cx, cy, s, k, H=None):
             bx, by = cx - 58 * s, cy - 24 * s
             ell(c, bx - 6 * s, by - 1 * s, 8 * s, 10 * s, hx(C.BOW_PINK), H=H)
             ell(c, bx + 6 * s, by - 2 * s, 8 * s, 10 * s, hx(C.BOW_BLUE), H=H)
+        # 眼睛(带高光)+ 鼻子 + 微笑嘴
         ell(c, cx - 23 * s, cy + 2 * s, 9 * s, 9 * s, hx(C.DARK), H=H)
         ell(c, cx + 23 * s, cy + 2 * s, 9 * s, 9 * s, hx(C.DARK), H=H)
-        ell(c, cx - 23 * s, cy - 1 * s, 2 * s, 2 * s, hx("#ffffff"), H=H)
-        ell(c, cx + 23 * s, cy - 1 * s, 2 * s, 2 * s, hx("#ffffff"), H=H)
+        ell(c, cx - 23 * s, cy - 1 * s, 2.5 * s, 2.5 * s, hx("#ffffff"), H=H)
+        ell(c, cx + 23 * s, cy - 1 * s, 2.5 * s, 2.5 * s, hx("#ffffff"), H=H)
         poly(c, [cx - 6 * s, (H or 0) - (cy + 22 * s), cx + 6 * s, (H or 0) - (cy + 22 * s),
                  cx, (H or 0) - (cy + 31 * s)], hx(C.NOSE))
+        line(c, [cx - 11 * s, (H or 0) - (cy + 26 * s), cx - 5 * s, (H or 0) - (cy + 32 * s),
+                 cx, (H or 0) - (cy + 26 * s)], hx(C.DARK), 1.5)
+        line(c, [cx + 11 * s, (H or 0) - (cy + 26 * s), cx + 5 * s, (H or 0) - (cy + 32 * s),
+                 cx, (H or 0) - (cy + 26 * s)], hx(C.DARK), 1.5)
+        # 腮红
+        ell(c, cx - 34 * s, cy + 28 * s, 6 * s, 5 * s, hx(C.BLUSH), H=H)
+        ell(c, cx + 34 * s, cy + 28 * s, 6 * s, 5 * s, hx(C.BLUSH), H=H)
 
 
 
